@@ -288,7 +288,9 @@ class Recurrence(rrulebase):
 
     def __getWeeklyWhen(self, offset):
         retval = hrJoin([d._getPluralWhen(offset) for d in self.byweekday])
-        if self.interval == 2:
+        if self.interval == 1:
+            retval = _("Weekly on {days}").format(days=retval)
+        elif self.interval == 2:
             retval = _("Fortnightly on {days}").format(days=retval)
         elif self.interval > 2:
             retval = _("Every {n} weeks on {days}").format(n=self.interval,
