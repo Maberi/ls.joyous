@@ -653,6 +653,14 @@ class MultidayRecurringEventPage(ProxyPageMixin, RecurringEventPage):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    @property
+    def next_date_to(self) -> dt.datetime:
+        """
+        End date for next occurrency.
+        """
+        return self.next_date + dt.timedelta(days=self.num_days - 1)
+
+
 # ------------------------------------------------------------------------------
 # EventException models
 # ------------------------------------------------------------------------------
