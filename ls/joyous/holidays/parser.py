@@ -12,7 +12,7 @@ def _createMap(symbols):
     for (name, cls) in symbols:
         if (type(cls) is type(object) and
             issubclass(cls, python_holidays.HolidayBase) and
-            cls is not python_holidays.HolidayBase):
+            cls is not python_holidays.HolidayBase and cls is not python_holidays.HolidaySum):
             holidayMap[name] = cls
             obj = cls()
             if hasattr(obj, "country"):
