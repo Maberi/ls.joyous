@@ -7,6 +7,9 @@ import holidays as python_holidays
 
 __all__ = ["parseHolidays"]
 
+from holidays import list_supported_countries
+
+
 def _createMap(symbols):
     holidayMap = {}
     for (name, cls) in symbols:
@@ -18,7 +21,8 @@ def _createMap(symbols):
             if hasattr(obj, "country"):
                 holidayMap.setdefault(obj.country, cls)
     return holidayMap
-_PYTHON_HOLIDAYS_MAP = _createMap(list(python_holidays.__dict__.items()))
+#_PYTHON_HOLIDAYS_MAP = _createMap(list(python_holidays.__dict__.items()))
+_PYTHON_HOLIDAYS_MAP = list_supported_countries()
 # Special treatment for NZ
 _ALT_PROV_NAMES = {'NZ': {"Northland", "Auckland", "Hawke's Bay",
                           "Taranaki", "New Plymouth", "Wellington",
