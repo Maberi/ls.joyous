@@ -3,7 +3,6 @@
 # ------------------------------------------------------------------------------
 import datetime as dt
 from operator import attrgetter
-from collections import OrderedDict
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.admin.widgets import FilteredSelectMultiple
@@ -20,12 +19,9 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.translation import gettext, gettext_noop
 from wagtail.core.models import Page
 from wagtail.core.fields import RichTextField
-from wagtail.admin.edit_handlers import (FieldPanel, MultiFieldPanel,
-        PageChooserPanel)
-from wagtail.images.edit_handlers import ImageChooserPanel
+from wagtail.admin.edit_handlers import (FieldPanel, MultiFieldPanel)
 from wagtail.contrib.routable_page.models import RoutablePageMixin, route
 from wagtail.search import index
-from wagtail.admin.forms import WagtailAdminPageForm
 from modelcluster.fields import ParentalKey
 from ..utils.manythings import hrJoin
 from ..utils.mixins import ProxyPageMixin
@@ -48,6 +44,7 @@ from .event_base import (ThisEvent, EventsByDayList,
 _1day  = dt.timedelta(days=1)
 _2days = dt.timedelta(days=2)
 
+
 # ------------------------------------------------------------------------------
 # Event models
 # ------------------------------------------------------------------------------
@@ -58,6 +55,7 @@ class EventWithHolidaysManager(EventManager):
     def __call__(self, request, holidays):
         # a shortcut
         return self.get_queryset().auth(request).hols(holidays)
+
 
 class EventWithHolidaysQuerySet(EventQuerySet):
     def __init__(self, *args, **kwargs):
@@ -83,6 +81,7 @@ class EventWithHolidaysQuerySet(EventQuerySet):
         qs = self._clone()
         qs.holidays = holidays
         return qs
+
 
 class RecurringEventQuerySet(EventWithHolidaysQuerySet):
     def this(self):
@@ -178,6 +177,7 @@ class RecurringEventQuerySet(EventWithHolidaysQuerySet):
         qs._iterable_class = ByDayIterable
         return qs
 
+
 # Panel trickery needed as editing proxy models doesn't work yet :-(
 class HiddenNumDaysPanel(FieldPanel):
     class widget(widgets.NumberInput):
@@ -237,7 +237,7 @@ class RecurringEventPage(EventBase, Page, metaclass=FormDefender):
 
     content_panels0 = Page.content_panels + [
         FieldPanel('category'),
-        ImageChooserPanel('image'),
+        FieldPanel('image'),
         FieldPanel('repeat')]
     content_panels1 = [
         TimePanel('time_from'),
@@ -918,7 +918,7 @@ class ExtraInfoPage(DateExceptionBase, Page, metaclass=FormDefender):
     ]
     # Note title is not displayed
     content_panels = [
-        PageChooserPanel('overrides'),
+        FieldPanel('overrides'),
         ExceptionDatePanel('except_date'),
         FieldPanel('extra_title', classname="full title"),
         FieldPanel('extra_information', classname="full"),
@@ -1070,7 +1070,7 @@ class CancellationPage(CancellationBase, DateExceptionBase, Page):
 
     # Note title is not displayed
     content_panels = [
-        PageChooserPanel('overrides'),
+        FieldPanel('overrides'),
         ExceptionDatePanel('except_date'),
         CancellationBase.cancellation_panel,
         ]
@@ -1236,7 +1236,7 @@ class PostponementPage(RoutablePageMixin, RescheduleEventBase, CancellationPage)
 
     postponement_panel0 = [
             FieldPanel('postponement_title', classname="full title"),
-            ImageChooserPanel('image'),
+            FieldPanel('image'),
             FieldPanel('date')]
     postponement_panel1 = [
             TimePanel('time_from'),
@@ -1248,7 +1248,7 @@ class PostponementPage(RoutablePageMixin, RescheduleEventBase, CancellationPage)
             postponement_panel0 + [HiddenNumDaysPanel()] + postponement_panel1,
             heading=_("Postponed to"))
     content_panels = [
-        PageChooserPanel('overrides'),
+        FieldPanel('overrides'),
         ExceptionDatePanel('except_date'),
         CancellationBase.cancellation_panel,
         postponement_panel,
@@ -1374,7 +1374,7 @@ class RescheduleMultidayEventPage(ProxyPageMixin, PostponementPage):
             PostponementPage.postponement_panel1,
             heading=_("Postponed to"))
     content_panels = [
-        PageChooserPanel('overrides'),
+        FieldPanel('overrides'),
         ExceptionDatePanel('except_date'),
         PostponementPage.cancellation_panel,
         postponement_panel,
@@ -1481,7 +1481,7 @@ class ClosedForHolidaysPage(CancellationBase, EventExceptionBase, Page,
     search_fields = Page.search_fields + CancellationBase.search_fields
     # Note title is not displayed
     content_panels = [
-        PageChooserPanel('overrides'),
+        FieldPanel('overrides'),
         MultiFieldPanel([
             FieldPanel('all_holidays'),
             FieldPanel('closed_for')],
@@ -1774,7 +1774,7 @@ class ExtCancellationPage(CancellationBase, EventExceptionBase, Page,
     search_fields = Page.search_fields + CancellationBase.search_fields
     # Note title is not displayed
     content_panels = [
-        PageChooserPanel('overrides'),
+        FieldPanel('overrides'),
         TZDatePanel('cancelled_from_date'),
         TZDatePanel('cancelled_to_date'),
         CancellationBase.cancellation_panel,

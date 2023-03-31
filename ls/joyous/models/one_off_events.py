@@ -78,7 +78,7 @@ class SimpleEventPage(EventBase, Page, metaclass=FormDefender):
 
     content_panels = Page.content_panels + [
         FieldPanel('category'),
-        ImageChooserPanel('image'),
+        FieldPanel('image'),
         FieldPanel('date'),
         TimePanel('time_from'),
         TimePanel('time_to'),
@@ -177,7 +177,7 @@ class MultidayEventPage(EventBase, Page, metaclass=FormDefender):
 
     content_panels = Page.content_panels + [
         FieldPanel('category'),
-        ImageChooserPanel('image'),
+        FieldPanel('image'),
         FieldPanel('date_from'),
         TimePanel('time_from'),
         FieldPanel('date_to'),
