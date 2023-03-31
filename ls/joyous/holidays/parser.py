@@ -3,26 +3,30 @@
 # ------------------------------------------------------------------------------
 from __future__ import unicode_literals
 import re
-import holidays as python_holidays
+from holidays.holiday_base import HolidayBase
+from holidays import countries as country_holidays
 
 __all__ = ["parseHolidays"]
 
-from holidays import list_supported_countries
-
+# FIXME use python-holidays new utils.list_supported_countries() and
+# country_holidays() API that makes this module obsolete
 
 def _createMap(symbols):
     holidayMap = {}
+
     for (name, cls) in symbols:
         if (type(cls) is type(object) and
-            issubclass(cls, python_holidays.HolidayBase) and
-            cls is not python_holidays.HolidayBase and cls is not python_holidays.HolidaySum):
+            issubclass(cls, HolidayBase) and
+            cls is not HolidayBase):
             holidayMap[name] = cls
             obj = cls()
             if hasattr(obj, "country"):
                 holidayMap.setdefault(obj.country, cls)
+
     return holidayMap
-#_PYTHON_HOLIDAYS_MAP = _createMap(list(python_holidays.__dict__.items()))
-_PYTHON_HOLIDAYS_MAP = list_supported_countries()
+
+
+_PYTHON_HOLIDAYS_MAP = _createMap(list(country_holidays.__dict__.items()))
 # Special treatment for NZ
 _ALT_PROV_NAMES = {'NZ': {"Northland", "Auckland", "Hawke's Bay",
                           "Taranaki", "New Plymouth", "Wellington",
@@ -40,6 +44,7 @@ def _parseSubdivisions(holidaysStr, cls):
         return retval
     provinces = getattr(cls, "PROVINCES", [])
     states = getattr(cls, "STATES", [])
+    subdivisions = getattr(cls, "subdivisions", [])
 
     for subdivision in SplitRe.split(holidaysStr[1:-1]):
         subdivision = subdivision.strip()
@@ -49,12 +54,16 @@ def _parseSubdivisions(holidaysStr, cls):
             retval += subval
             subval = sum(cls(prov = subdivision) for subdivision in provinces)
             retval += subval
+            subval = sum(cls(subdiv = subdivision) for subdivision in subdivisions)
+            retval += subval
             break
         else:
             if subdivision in states:
                 retval += cls(state = subdivision)
             elif subdivision in provinces:
                 retval += cls(prov = subdivision)
+            elif subdivision in subdivisions:
+                retval += cls(subdiv = subdivision)
             else:
                 country = getattr(cls(), 'country', None)
                 if subdivision in _ALT_PROV_NAMES.get(country, {}):
