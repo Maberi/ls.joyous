@@ -3,7 +3,7 @@
 # ------------------------------------------------------------------------------
 import warnings
 from django.conf import settings
-from wagtail.core.models import PageBase
+from wagtail.models import PageBase
 from wagtail.admin.forms import WagtailAdminPageForm
 
 # ------------------------------------------------------------------------------

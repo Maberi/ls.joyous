@@ -4,15 +4,12 @@
 import datetime as dt
 from django.db import models
 from django.db.models.query import ModelIterable
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from wagtail.core.models import Page
-from wagtail.admin.edit_handlers import FieldPanel
-from wagtail.images.edit_handlers import ImageChooserPanel
+from wagtail.models import Page
+from wagtail.admin.panels import FieldPanel
 
 from ..utils.telltime import (todayUtc, getAwareDatetime, getLocalDatetime,
         getLocalDate, getLocalTime)
-from ..utils.telltime import timeFormat
 from ..edit_handlers import TimePanel
 from ..forms import FormDefender
 from .groups import get_group_model_string
