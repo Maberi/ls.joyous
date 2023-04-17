@@ -59,7 +59,7 @@ class SimpleGEvent(GEvent):
         dtend   = getAwareDatetime(page.date, page.time_to, page.tz, dt.time.max)
         gevent.set('dates', vPeriod((dtstart, dtend)).to_ical().decode())
         if page.tz != pytz.utc:
-            gevent.set('ctz', page.tz.zone)
+            gevent.set('ctz', page.tz.key)
         return gevent
 
 # ------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ class MultidayGEvent(GEvent):
         dtend   = getAwareDatetime(page.date_to, page.time_to, page.tz, dt.time.max)
         gevent.set('dates', vPeriod((dtstart, dtend)).to_ical().decode())
         if page.tz != pytz.utc:
-            gevent.set('ctz', page.tz.zone)
+            gevent.set('ctz', page.tz.key)
         return gevent
 
 # ------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ class RecurringGEvent(GEvent):
         dtend   = page._getMyFirstDatetimeTo()   or minDt
         gevent.set('dates', vPeriod((dtstart, dtend)).to_ical().decode())
         if page.tz != pytz.utc:
-            gevent.set('ctz', page.tz.zone)
+            gevent.set('ctz', page.tz.key)
         gevent.set('recur', "RRULE:" + page.repeat._getRrule())
         return gevent
 
