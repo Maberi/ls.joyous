@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ls.joyous"
+version = "1.5"
+description = "A calendar application for Wagtail."
+keywords = ["calendar", "events", "wagtail", "groupware"]
+license = {file = "LICENSE"}
+readme = "README.rst"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+   "Framework :: Django",
+   "Framework :: Wagtail",
+   "Framework :: Wagtail :: 2",
+   "Framework :: Wagtail :: 3",
+   "License :: OSI Approved :: BSD License",
+   "Operating System :: OS Independent",
+   "Programming Language :: Python",
+   "Programming Language :: Python :: 3",
+   "Topic :: Office/Business :: Groupware",
+   "Topic :: Office/Business :: Scheduling",
+   "Topic :: Software Development :: Libraries :: Python Modules",
+]
+authors = [
+    {name = "David Moore", email = "david@linuxsoftware.co.nz"},
+]
+requires-python = '>=3.11'
+dependencies = [
+   "django-timezone-field",
+   "holidays",
+   "icalendar",
+   "num2words",
+   "python-dateutil",
+   "feedgen",
+]
+
+[project.urls]
+Repository = "https://github.com/linuxsoftware/ls.joyous"
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["ls.joyous.tests", "docs"]
