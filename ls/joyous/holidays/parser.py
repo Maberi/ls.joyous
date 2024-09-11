@@ -3,71 +3,26 @@
 # ------------------------------------------------------------------------------
 from __future__ import unicode_literals
 import re
-from holidays.holiday_base import HolidayBase
-from holidays import countries as country_holidays
+import holidays
 
 __all__ = ["parseHolidays"]
-
-# FIXME use python-holidays new utils.list_supported_countries() and
-# country_holidays() API that makes this module obsolete
-
-def _createMap(symbols):
-    holidayMap = {}
-
-    for (name, cls) in symbols:
-        if (type(cls) is type(object) and
-            issubclass(cls, HolidayBase) and
-            cls is not HolidayBase):
-            holidayMap[name] = cls
-            obj = cls()
-            if hasattr(obj, "country"):
-                holidayMap.setdefault(obj.country, cls)
-
-    return holidayMap
-
-
-_PYTHON_HOLIDAYS_MAP = _createMap(list(country_holidays.__dict__.items()))
-# Special treatment for NZ
-_ALT_PROV_NAMES = {'NZ': {"Northland", "Auckland", "Hawke's Bay",
-                          "Taranaki", "New Plymouth", "Wellington",
-                          "Marlborough", "Nelson", "Canterbury",
-                          "South Canterbury", "Westland", "Otago",
-                          "Southland", "Chatham Islands"}}
 
 HolsRe = re.compile(r"(\w[\w\ ]*|\*)(\[.+?\])?")
 SplitRe = re.compile(r",\s*")
 
-def _parseSubdivisions(holidaysStr, cls):
+def _parseSubdivisions(holidaysStr, pais):
     # * = all states and provinces
-    retval = 0
+    retval = holidays.HolidayBase()
     if holidaysStr[0] != '[' or holidaysStr[-1] != ']':
-        return retval
-    provinces = getattr(cls, "PROVINCES", [])
-    states = getattr(cls, "STATES", [])
-    subdivisions = getattr(cls, "subdivisions", [])
+        return holidays.HolidayBase()
 
     for subdivision in SplitRe.split(holidaysStr[1:-1]):
         subdivision = subdivision.strip()
         if subdivision == "*":
-            retval = 0
-            subval = sum(cls(state = subdivision) for subdivision in states)
-            retval += subval
-            subval = sum(cls(prov = subdivision) for subdivision in provinces)
-            retval += subval
-            subval = sum(cls(subdiv = subdivision) for subdivision in subdivisions)
-            retval += subval
+            retval = holidays.country_holidays(pais)
             break
         else:
-            if subdivision in states:
-                retval += cls(state = subdivision)
-            elif subdivision in provinces:
-                retval += cls(prov = subdivision)
-            elif subdivision in subdivisions:
-                retval += cls(subdiv = subdivision)
-            else:
-                country = getattr(cls(), 'country', None)
-                if subdivision in _ALT_PROV_NAMES.get(country, {}):
-                    retval += cls(prov = subdivision)
+            retval = holidays.HolidaysSum(retval, holidays.country_holidays(pais, subdiv=subdivision))
     return retval
 
 def parseHolidays(holidaysStr, holidayMap=None):
@@ -75,28 +30,25 @@ def parseHolidays(holidaysStr, holidayMap=None):
     Takes a string like NZ[WTL,Nelson],AU[*],Northern Ireland and builds a HolidaySum from it
     """
     if holidayMap is None:
-        holidayMap = _PYTHON_HOLIDAYS_MAP
-    retval = 0
+        holidayMap = holidays.utils.list_supported_countries()
+    retval = holidays.HolidaySum(holidays.HolidayBase(), holidays.HolidayBase())
     holidaysStr = holidaysStr.strip()
     for (country, subdivisions) in HolsRe.findall(holidaysStr):
         if country == "*":
-            retval = 0
-            for cls in holidayMap.values():
+            for pais in holidayMap.keys():
                 if subdivisions:
-                    subval = _parseSubdivisions(subdivisions, cls)
-                    retval += subval
+                    subval = _parseSubdivisions(subdivisions, pais)
+                    retval = holidays.HolidaySum(retval, subval)
                 else:
-                    retval += cls()
+                    retval = holidays.HolidaySum(retval, holidays.country_holidays(pais))
             break
-        cls = holidayMap.get(country)
+        cls = holidays.utils.country_holidays(country)
         if cls is not None:
             if subdivisions:
-                subval = _parseSubdivisions(subdivisions, cls)
-                retval += subval
+                subval = _parseSubdivisions(subdivisions, country)
+                retval = holidays.HolidaySum(retval, subval)
             else:
-                retval += cls()
-    if isinstance(retval, int) and retval == 0:
-        retval = None
+                retval = holidays.HolidaySum(retval, cls)
     return retval
 
 # ------------------------------------------------------------------------------

@@ -14,16 +14,16 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.translation import gettext
 from timezone_field import TimeZoneField
 from wagtail.models import Page, PageManager, PageViewRestriction
+
 try:
     from wagtail.query import PageQuerySet
 except ImportError:
     from wagtail.query import PageQuerySet
 from wagtail.fields import RichTextField
 from wagtail.admin.panels import (FieldPanel,
-        PageChooserPanel, BaseCompositeEditHandler)
+                                  PageChooserPanel, PanelGroup)
 from wagtail.images import get_image_model_string
 from wagtail.search import index
-from wagtail.admin.forms import WagtailAdminPageForm
 from ..utils.telltime import getLocalDateAndTime
 from ..utils.telltime import getTimeFrom, getTimeTo
 from ..utils.telltime import timeFormat, dateFormat
@@ -40,15 +40,16 @@ def _filterContentPanels(panels, remove):
     for panel in panels:
         if isinstance(panel, FieldPanel) and panel.field_name in remove:
             continue
-        elif isinstance(panel, BaseCompositeEditHandler):
+        elif isinstance(panel, PanelGroup):
             panel.children = _filterContentPanels(panel.children, remove)
         retval.append(panel)
     return retval
 
+
 # ------------------------------------------------------------------------------
 # Helper types and constants
 # ------------------------------------------------------------------------------
-class ThisEvent:
+class ThisEvent():
     _fields = ('title', 'page', 'url')
 
     def __init__(self, *args, **kwargs):
@@ -72,7 +73,7 @@ class ThisEvent:
         return OrderedDict(zip(self._fields, self))
 
     def _astuple(self):
-        return (self.title, self.page, self.url)
+        return self.title, self.page, self.url
 
     def __repr__(self):
         return "ThisEvent (title=%r, page=%r, url=%r)" % self._astuple()
@@ -83,12 +84,14 @@ class ThisEvent:
     def __getitem__(self, key):
         return self._astuple()[key]
 
+
 class EventsOnDay:
     # TODO support __add__
     """
     The events that occur on a certain day.  Both events that start on that day
     and events that are still continuing.
     """
+
     def __init__(self, date, holiday=None,
                  days_events=None, continuing_events=None):
         if days_events is None:
@@ -119,23 +122,24 @@ class EventsOnDay:
     @property
     def weekday(self):
         """
-        The weekday abbreviation for this days (e.g. "mon").
+        The weekday abbreviation for these days (e.g. "mon").
         """
         return calendar.day_abbr[self.date.weekday()].lower()
+
 
 class EventsByDayList(list):
     def __init__(self, fromDate, toDate, holidays=None):
         if holidays is None:
             holidays = {}
         self.fromOrd = fromDate.toordinal()
-        self.toOrd   = toDate.toordinal()
+        self.toOrd = toDate.toordinal()
         days = [dt.date.fromordinal(ord)
-                for ord in range(self.fromOrd, self.toOrd+1)]
+                for ord in range(self.fromOrd, self.toOrd + 1)]
         super().__init__(EventsOnDay(day, holidays.get(day)) for day in days)
 
     def add(self, thisEvent, pageFromDate, pageToDate):
         pageFromOrd = pageFromDate.toordinal()
-        pageToOrd   = pageToDate.toordinal()
+        pageToOrd = pageToDate.toordinal()
         dayNum = pageFromOrd - self.fromOrd
         if 0 <= dayNum <= self.toOrd - self.fromOrd:
             self[dayNum].days_events.append(thisEvent)
@@ -145,11 +149,13 @@ class EventsByDayList(list):
             if 0 <= dayNum <= self.toOrd - self.fromOrd:
                 self[dayNum].continuing_events.append(thisEvent)
 
+
 # ------------------------------------------------------------------------------
 # Event models
 # ------------------------------------------------------------------------------
 class EventCategory(models.Model):
-    """The category type of an event."""
+    """The category type of event."""
+
     class Meta:
         ordering = ["name"]
         verbose_name = _("event category")
@@ -166,6 +172,7 @@ class EventCategory(models.Model):
     def __str__(self):
         return self.name
 
+
 # ------------------------------------------------------------------------------
 class EventManager(PageManager):
     def get_queryset(self):
@@ -175,15 +182,16 @@ class EventManager(PageManager):
         # a shortcut
         return self.get_queryset().auth(request)
 
+
 class EventQuerySet(PageQuerySet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.request    = None
+        self.request = None
         self.postFilter = None
 
     def _clone(self):
         qs = super()._clone()
-        qs.request    = self.request
+        qs.request = self.request
         qs.postFilter = self.postFilter
         return qs
 
@@ -235,23 +243,26 @@ class EventQuerySet(PageQuerySet):
                 if not getattr(page, attribute, False):
                     return False
             return True
+
         return predicate
 
     def this(self):
         request = self.request
+
         class ThisIterable(ModelIterable):
             def __iter__(self):
                 for page in super().__iter__():
                     yield ThisEvent(page.title, page, page.get_url(request))
+
         qs = self._clone()
         qs._iterable_class = ThisIterable
         return qs
 
     def authorized_q(self, request):
         PASSWORD = PageViewRestriction.PASSWORD
-        LOGIN    = PageViewRestriction.LOGIN
-        GROUPS   = PageViewRestriction.GROUPS
-        KEY      = PageViewRestriction.passed_view_restrictions_session_key
+        LOGIN = PageViewRestriction.LOGIN
+        GROUPS = PageViewRestriction.GROUPS
+        KEY = PageViewRestriction.passed_view_restrictions_session_key
 
         restrictions = PageViewRestriction.objects.all()
         passed = request.session.get(KEY, [])
@@ -282,6 +293,7 @@ class EventQuerySet(PageQuerySet):
     # Possible Future feature redact unauthorized events??
     #def redact(self, request)
 
+
 class EventPageForm(BorgPageForm):
     def clean(self):
         cleaned_data = super().clean()
@@ -290,14 +302,16 @@ class EventPageForm(BorgPageForm):
 
     def _checkStartBeforeEnd(self, cleaned_data):
         startTime = getTimeFrom(cleaned_data.get('time_from'))
-        endTime   = getTimeTo(cleaned_data.get('time_to'))
+        endTime = getTimeTo(cleaned_data.get('time_to'))
         if startTime > endTime:
             self.add_error('time_to', _("Event cannot end before it starts"))
+
 
 # Cannot serialize: functools._lru_cache_wrapper object
 # There are some values Django cannot serialize into migration files.
 def _get_default_timezone():
     return timezone.get_default_timezone()
+
 
 class EventBase(models.Model):
     class Meta:
@@ -321,19 +335,19 @@ class EventBase(models.Model):
     tz = TimeZoneField(verbose_name=_("time zone"),
                        default=_get_default_timezone)
 
-    group_page  = models.ForeignKey(get_group_model_string(),
-                                    null=True, blank=True,
-                                    verbose_name=_("group page"),
-                                    on_delete=models.SET_NULL)
-    details  = RichTextField(_("details"), blank=True)
+    group_page = models.ForeignKey(get_group_model_string(),
+                                   null=True, blank=True,
+                                   verbose_name=_("group page"),
+                                   on_delete=models.SET_NULL)
+    details = RichTextField(_("details"), blank=True)
     location = models.CharField(_("location"), max_length=255, blank=True)
     website = models.URLField(_("website"), blank=True)
 
     # Init these variables to prevent template DEBUG messages
     # Yes, this is very ugly.  An alternative solution would be welcome.
     cancellation_details = None
-    extra_information    = None
-    postponed_from_when  = None
+    extra_information = None
+    postponed_from_when = None
 
     search_fields = Page.search_fields + [
         index.SearchField('location'),
@@ -411,9 +425,9 @@ class EventBase(models.Model):
         """
         now = timezone.localtime()
         if self._getToDt() < now:
-           return "finished"
+            return "finished"
         elif self._getFromDt() < now:
-           return "started"
+            return "started"
 
     @property
     def status_text(self):
@@ -482,14 +496,14 @@ class EventBase(models.Model):
 
         if dateFrom == dateTo:
             retval = _("{date} {atTime}").format(date=dateFormat(dateFrom),
-                        atTime=timeFormat(timeFrom, timeTo, gettext("at ")))
+                                                 atTime=timeFormat(timeFrom, timeTo, gettext("at ")))
         else:
             retval = _("{date} {atTime}").format(date=dateFormat(dateFrom),
-                        atTime=timeFormat(timeFrom, prefix=gettext("at ")))
+                                                 atTime=timeFormat(timeFrom, prefix=gettext("at ")))
             retval = _("{dateTimeFrom} to {dateTo} {atTimeTo}").format(
-                        dateTimeFrom=retval.strip(),
-                        dateTo=dateFormat(dateTo),
-                        atTimeTo=timeFormat(timeTo, prefix=gettext("at ")))
+                dateTimeFrom=retval.strip(),
+                dateTo=dateFormat(dateTo),
+                atTimeTo=timeFormat(timeTo, prefix=gettext("at ")))
         return retval.strip()
 
     def _getFromTime(self, atDate=None):
