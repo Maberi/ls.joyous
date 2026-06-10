@@ -363,7 +363,8 @@ class vSmart(vText):
             retval = base64.b64decode(retval).decode(self.encoding, 'ignore')
         return retval
 
-from icalendar.cal import types_factory
+from icalendar.prop import TypesFactory
+types_factory = TypesFactory.instance()
 types_factory['date']      = vDt
 types_factory['date-time'] = vDt
 types_factory['text']      = vSmart
